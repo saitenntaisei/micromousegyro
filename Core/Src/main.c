@@ -60,6 +60,17 @@ static void MX_SPI1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t spi_gyro_read(uint8_t);
+float gyro_offset = 0.0f;
+void imu_calibulation()
+{
+  float temp = 0.0f;
+  int times = 1000;
+  for(int i=0; i < times; i++){
+    temp += spi_gyro_OUT_Z();
+    HAL_Delay(1);
+  }
+  gyro_offset = temp / times;
+}
 float spi_gyro_OUT_Z(void)
 {
   /*HAL_Delay(1);*/
@@ -69,6 +80,10 @@ float spi_gyro_OUT_Z(void)
   /*printf("Z = %d\r\n", (int16_t)((Z_H << 8) + Z_L));*/
   /*HAL_Delay(1);*/
   return (float)((int16_t)((Z_H << 8) + Z_L)) * 0.00875f;
+}
+float read_gyro()
+{
+  return spi_gyro_OUT_Z() - gyro_offset;
 }
 void spi_gyro_who_am_i(void)
 {
@@ -152,7 +167,7 @@ int main(void)
 
     for (int i = 0; i < 1000; i++)
     {
-      sum += spi_gyro_OUT_Z() * 0.001f;
+      sum += read_gyro() * 0.001f;
       HAL_Delay(1);
     }
     sum -= 2;
